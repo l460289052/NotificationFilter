@@ -39,10 +39,10 @@ interface NotificationDao {
     @Query("SELECT * FROM notification")
     fun getAll(): List<Notification>
 
-    @Query("SELECT * FROM notification WHERE time > :left AND time < :right")
+    @Query("SELECT * FROM notification WHERE time > :left AND time < :right ORDER BY time DESC")
     fun getBetween(left: LocalDateTime, right: LocalDateTime): List<Notification>
 
-    @Query("SELECT * FROM notification WHERE time > :left")
+    @Query("SELECT * FROM notification WHERE time > :left ORDER BY time DESC")
     fun getAfter(left: LocalDateTime): List<Notification>
 
     @Insert

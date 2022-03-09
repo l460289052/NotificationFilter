@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.example.notificationfilter.databinding.NotificationItemBinding
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 data class NotificationItem(
     val app: String,
@@ -36,6 +37,7 @@ class NotificationItemAdapter(private var notificationItemList: List<Notificatio
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.binding.run {
             notificationItemList[position].run {
+                textViewDatetime.text = time.format(DateTimeFormatter.ofPattern("HH:mm:ss yyyy-MM-dd"))
                 titleView.text = "$app: $title"
                 contentView.text = content
                 iconView.setImageDrawable(icon)
