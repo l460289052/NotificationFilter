@@ -59,9 +59,11 @@ class MainActivity : AppCompatActivity() {
         binding.startButton.setOnClickListener {
             if (!notificationPermission)
                 startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) // 这句话是请求权限的…… NotificationListenerService.requestRebind(
-            ComponentName(
-                applicationContext,
-                NotificationCatcher::class.java
+            NotificationListenerService.requestRebind(
+                ComponentName(
+                    applicationContext,
+                    NotificationCatcher::class.java
+                )
             )
         }
         binding.stopButton.setOnClickListener {

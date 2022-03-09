@@ -9,13 +9,13 @@ import java.time.temporal.ChronoUnit
 
 class Converters {
     @TypeConverter
-    public fun fromTimestamp(value: Long): LocalDateTime {
+    fun fromTimestamp(value: Long): LocalDateTime {
         return ChronoUnit.SECONDS.addTo(BASE, value)
     }
 
     @TypeConverter()
-    public fun toTimestamp(date: LocalDateTime): Long {
-        return ChronoUnit.SECONDS.between(LocalDateTime.now(), LocalDateTime.now())
+    fun toTimestamp(date: LocalDateTime): Long {
+        return ChronoUnit.SECONDS.between(BASE, date)
     }
 
     companion object {
@@ -25,7 +25,7 @@ class Converters {
 
 @Entity
 data class Notification(
-    val time: LocalDateTime,
+    @ColumnInfo(index = true) val time: LocalDateTime,
     val app: String,
     val title: String,
     val content: String
@@ -62,7 +62,7 @@ abstract class NotificationDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     NotificationDatabase::class.java,
-                    "notification_database"
+                    "notification_database.db"
                 ).build()
                 INSTANCE = instance
                 instance
