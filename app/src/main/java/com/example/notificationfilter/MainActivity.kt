@@ -6,14 +6,13 @@ import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
-import android.text.BoringLayout
-import android.widget.Toast
+import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.notificationfilter.databinding.ActivityMainBinding
 
@@ -58,38 +57,22 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.startButton.setOnClickListener {
-            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+            if (!notificationPermission)
+                startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) // 这句话是请求权限的…… NotificationListenerService.requestRebind(
+            ComponentName(
+                applicationContext,
+                NotificationCatcher::class.java
+            )
         }
-//        binding.startButton.setOnClickListener { notificationActive = true }
-//        binding.stopButton.setOnClickListener { notificationActive = false }
+        binding.stopButton.setOnClickListener {
+            sendBroadcast(Intent(NotificationCatcher.IntentStop))
+
+        }
     }
 
-//    private val notificationServiceEnabled: Boolean
-//        get() {
-//            val flat = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
-//            flat?.let {
-//                for (name in it.split(":"))
-//                    if (ComponentName.unflattenFromString(name)?.packageName == packageName)
-//                        return true
-//            }
-//            return false
-//        }
-
-//    private var notificationCatcherActive: Boolean
-//        set(value) {
-//            if (value)
-//
-//                NotificationListenerService.requestRebind()
-//            else
-//                NotificationListenerService.
-//
-//        }
-//
-//    private var notificationActive: Boolean
-//        set(value) {
-//            if (value && !notificationActive)
-//                startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-//            if (!value && notificationActive)
-//                startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
-//        }
+    private val notificationPermission: Boolean
+        get() {
+            val pkgnames = NotificationManagerCompat.getEnabledListenerPackages(this)
+            return pkgnames.contains(packageName)
+        }
 }
