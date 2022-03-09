@@ -10,32 +10,35 @@
         android:layout_height="wrap_content">
 
         <TextView
-            android:id="@+id/textView"
+            android:id="@+id/contentView"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:layout_marginTop="4dp"
             android:text="TextView"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/imageView"
-            app:layout_constraintTop_toBottomOf="@+id/textView2"
+            app:layout_constraintStart_toEndOf="@+id/iconView"
+            app:layout_constraintTop_toBottomOf="@+id/titleView"
             tools:ignore="MissingConstraints" />
 
         <ImageView
-            android:id="@+id/imageView"
+            android:id="@+id/iconView"
             android:layout_width="60dp"
             android:layout_height="60dp"
-            app:srcCompat="@drawable/archives"
-            tools:layout_editor_absoluteX="5dp"
-            tools:layout_editor_absoluteY="16dp" />
+            android:layout_marginStart="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/titleView"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/archives" />
 
         <TextView
-            android:id="@+id/textView2"
+            android:id="@+id/titleView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="TextView"
             android:textSize="20sp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/imageView"
-            app:layout_constraintTop_toTopOf="@+id/imageView" />
+            app:layout_constraintStart_toEndOf="@+id/iconView"
+            app:layout_constraintTop_toTopOf="@+id/iconView" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

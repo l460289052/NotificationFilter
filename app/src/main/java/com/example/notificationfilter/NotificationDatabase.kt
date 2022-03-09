@@ -26,7 +26,7 @@ class Converters {
 @Entity
 data class Notification(
     @ColumnInfo(index = true) val time: LocalDateTime,
-    val app: String,
+    @ColumnInfo(index = true) val app: String,
     val title: String,
     val content: String
 ) {
