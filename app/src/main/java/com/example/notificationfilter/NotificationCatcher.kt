@@ -17,6 +17,7 @@ open class NotificationCatcher : NotificationListenerService() {
 
     private lateinit var stopReceiver: BroadcastReceiver
     override fun onCreate() {
+        Log.v(NOTI_SERVER, "on created")
         super.onCreate()
         stopReceiver = FuncBroadcastReceiver {
             RUNNING = false
@@ -28,7 +29,6 @@ open class NotificationCatcher : NotificationListenerService() {
             registerReceiver(stopReceiver, this)
         }
 //        requestUnbind()
-        Log.v(NOTI_SERVER, "on created")
     }
 
     override fun onListenerConnected() {
