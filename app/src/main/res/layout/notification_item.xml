@@ -13,6 +13,7 @@
             android:id="@+id/contentView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
             android:layout_marginTop="4dp"
             android:text="TextView"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -35,7 +36,7 @@
             android:id="@+id/titleView"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="4dp"
             android:layout_marginEnd="4dp"
             android:text="TextView"
             android:textSize="16sp"
@@ -51,5 +52,14 @@
             android:text="00:00:00 2022-03-09"
             app:layout_constraintStart_toStartOf="@+id/iconView"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/appnameView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:text="TextView"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/textViewDatetime" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

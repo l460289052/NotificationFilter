@@ -13,9 +13,12 @@ import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.text.Editable
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.DatePicker
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.Switch
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -34,9 +37,59 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
     private lateinit var viewAdapter: NotificationItemAdapter
+    private lateinit var manager: NotificationManager
 
     private val db: NotificationDatabase by lazy { NotificationDatabase.getDatabase(this) }
     private var notificationItemList: List<NotificationItem> = listOf()
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main, menu)
+        manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        manager.createNotificationChannel(
+            NotificationChannel("normal", "Normal", NotificationManager.IMPORTANCE_DEFAULT)
+        )
+        return true
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
+        menu?.run {
+            val switch: Switch = findItem(R.id.menu_switch).actionView as Switch
+            switch.setOnCheckedChangeListener { compoundButton, enabled ->
+                if (enabled) {
+                    if (!notificationPermission)
+                        startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) // 这句话是请求权限的…… NotificationListenerService.requestRebind(
+                    NotificationListenerService.requestRebind(
+                        ComponentName(
+                            applicationContext,
+                            NotificationCatcher::class.java
+                        )
+                    )
+                } else {
+                    sendBroadcast(Intent(NotificationCatcher.IntentStop))
+                }
+                Log.v(TAG, "switch $enabled")
+            }
+        }
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.menu_noti ->
+                manager.notify(
+                    1,
+                    NotificationCompat.Builder(this@MainActivity, "normal")
+                        .apply {
+                            setContentTitle("This is content title")
+                            setContentText("This is text")
+                            setSmallIcon(R.drawable.archives)
+                            setAutoCancel(true)
+                        }.build()
+                )
+            R.id.menu_filters -> {}
+        }
+        return true
+    }
 
     @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,10 +121,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setListener() {
-        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        manager.createNotificationChannel(
-            NotificationChannel("normal", "Normal", NotificationManager.IMPORTANCE_DEFAULT)
-        )
 
         binding.run {
             searchButton.setOnClickListener { search() }
@@ -91,34 +140,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-
-            notiButton.setOnClickListener {
-                manager.notify(
-                    1,
-                    NotificationCompat.Builder(this@MainActivity, "normal")
-                        .apply {
-                            setContentTitle("This is content title")
-                            setContentText("This is text")
-                            setSmallIcon(R.drawable.archives)
-                            setAutoCancel(true)
-                        }.build()
-                )
-            }
-
-            startButton.setOnClickListener {
-                if (!notificationPermission)
-                    startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) // 这句话是请求权限的…… NotificationListenerService.requestRebind(
-                NotificationListenerService.requestRebind(
-                    ComponentName(
-                        applicationContext,
-                        NotificationCatcher::class.java
-                    )
-                )
-            }
-            stopButton.setOnClickListener {
-                sendBroadcast(Intent(NotificationCatcher.IntentStop))
-
-            }
 
             swipeRefreshLayout.setOnRefreshListener {
                 search()
@@ -161,36 +182,25 @@ class MainActivity : AppCompatActivity() {
                         val ai = pm.getApplicationInfo(n.app, 0)
                         val name = ai.loadLabel(pm) as String
                         if (keyword.isNotEmpty() &&
-                            !(name.lowercase().contains(keyword) ||
-                                    n.app.lowercase().contains(keyword) ||
-                                    n.title.lowercase().contains(keyword) ||
-                                    n.content.lowercase().contains(keyword))
+                            !listOf(name, n.app, n.channel, n.title, n.content)
+                                .joinToString("\n").lowercase().contains(keyword)
                         )
                             continue
                         l.add(
                             NotificationItem(
-                                name,
-                                n.title,
-                                n.content,
-                                n.time,
-                                ai.loadIcon(pm)
+                                name, n.channel, n.title, n.content, n.intent,
+                                n.time, ai.loadIcon(pm)
                             )
                         )
 
                     } catch (e: PackageManager.NameNotFoundException) {
                         if (keyword.isNotEmpty() &&
-                            !(n.app.lowercase().contains(keyword) ||
-                                    n.title.lowercase().contains(keyword) ||
-                                    n.content.lowercase().contains(keyword))
+                            !listOf(n.app, n.channel, n.title, n.content)
+                                .joinToString("\n").lowercase().contains(keyword)
                         )
                             continue
                         l.add(
-                            NotificationItem(
-                                n.app,
-                                n.title,
-                                n.content,
-                                n.time
-                            )
+                            NotificationItem(n.app, n.channel, n.title, n.content, n.intent, n.time)
                         )
 
                     }

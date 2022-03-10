@@ -39,19 +39,22 @@ open class NotificationCatcher : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         sbn?.let {
 
-            val extras = it.notification.extras
-            val pkg = it.packageName
+            val notification = it.notification
+            val extras = notification.extras
             val title = extras.getString(Notification.EXTRA_TITLE)
             val text = extras.getString(Notification.EXTRA_TEXT)
+
 
             scope.launch {
                 val dao = db.notificationDao()
                 dao.insertAll(
                     Notification(
                         LocalDateTime.now(),
-                        pkg,
+                        it.packageName,
+                        notification.channelId,
                         title ?: "",
-                        text ?: ""
+                        text ?: "",
+                        "" // TODO: 需要之后实现intent的持久化与跳转！
                     )
                 )
                 Log.v(NOTI_SERVER, "insert")
@@ -66,7 +69,6 @@ open class NotificationCatcher : NotificationListenerService() {
     companion object {
         val NOTI_SERVER = "NOTI-SERVER"
         var RUNNING = false
-        var IntentStart = "com.example.notificationfilter.START"
         var IntentStop = "com.example.notificationfilter.STOP"
     }
 }

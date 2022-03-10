@@ -23,12 +23,14 @@ class Converters {
     }
 }
 
-@Entity
+@Entity(indices = [Index(value = ["app", "channel"])])
 data class Notification(
     @ColumnInfo(index = true) val time: LocalDateTime,
-    @ColumnInfo(index = true) val app: String,
+    val app: String,
+    val channel: String,
     val title: String,
-    val content: String
+    val content: String,
+    val intent: String
 ) {
     @PrimaryKey(autoGenerate = true)
     var id: Int = 0
