@@ -13,8 +13,10 @@ import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.text.Editable
 import android.util.Log
+import android.view.ContextMenu
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.DatePicker
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -32,6 +34,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import com.example.notificationfilter.database.NotificationDatabase
+import com.example.notificationfilter.database.NotificationFilter
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -58,12 +62,7 @@ class MainActivity : AppCompatActivity() {
                 if (enabled) {
                     if (!notificationPermission)
                         startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) // 这句话是请求权限的…… NotificationListenerService.requestRebind(
-                    NotificationListenerService.requestRebind(
-                        ComponentName(
-                            applicationContext,
-                            NotificationCatcher::class.java
-                        )
-                    )
+                    rebindListenerService()
                 } else {
                     sendBroadcast(Intent(NotificationCatcher.IntentStop))
                 }
@@ -71,6 +70,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return true
+    }
+
+    private fun rebindListenerService() {
+        NotificationListenerService.requestRebind(
+            ComponentName(
+                applicationContext,
+                NotificationCatcher::class.java
+            )
+        )
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -86,7 +94,8 @@ class MainActivity : AppCompatActivity() {
                             setAutoCancel(true)
                         }.build()
                 )
-            R.id.menu_filters -> {}
+            R.id.menu_filters ->
+                startActivity(Intent(this, FilterActivity::class.java))
         }
         return true
     }
@@ -111,14 +120,56 @@ class MainActivity : AppCompatActivity() {
             logView.apply {
                 layoutManager = LinearLayoutManager(this@MainActivity)
                 addItemDecoration(DividerItemDecoration(context, LinearLayout.VERTICAL))
-            }
+            }.also { registerForContextMenu(it) }
 
             editTextDateStart.text = Editable.Factory.getInstance()
                 .newEditable(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
         }
-
-
     }
+
+    override fun onCreateContextMenu(
+        menu: ContextMenu?,
+        v: View?,
+        menuInfo: ContextMenu.ContextMenuInfo?
+    ) {
+        super.onCreateContextMenu(menu, v, menuInfo)
+        menuInflater.inflate(R.menu.notification_context_menu, menu)
+    }
+
+    override fun onContextItemSelected(item: MenuItem): Boolean = when (item.itemId) {
+        R.id.context_menu_filter -> {
+            GlobalScope.launch(Dispatchers.IO) {
+                notificationItemList[viewAdapter.currentPosition].run {
+                    db.filterDao().insert(
+                        NotificationFilter("^$pkg\n$channel\n")
+                    )
+                }
+            }
+            rebindListenerService()
+            true
+        }
+        R.id.context_menu_filter_delete -> {
+            GlobalScope.launch {
+                withContext(Dispatchers.IO) {
+                    val regex =
+                        notificationItemList[viewAdapter.currentPosition].run { "^$pkg\n$channel\n" }
+//                    db.filterDao().insert(NotificationFilter(regex))
+//
+//                    rebindListenerService(
+
+                    val dao = db.notificationDao()
+                    val reg = regex.toRegex()
+                    val all = dao.getAll()
+                    val toBeRemove = all.filter { reg.find(it.toBeRegex())?.value != null }
+                    dao.delete(*toBeRemove.toTypedArray())
+                }
+                search()
+            }
+            true
+        }
+        else -> super.onContextItemSelected(item)
+    }
+
 
     private fun setListener() {
 
@@ -188,19 +239,22 @@ class MainActivity : AppCompatActivity() {
                             continue
                         l.add(
                             NotificationItem(
-                                name, n.channel, n.title, n.content, n.intent,
-                                n.time, ai.loadIcon(pm)
+                                n.app, name, n.channel, n.title, n.content,
+                                n.intent, n.time, ai.loadIcon(pm)
                             )
                         )
 
                     } catch (e: PackageManager.NameNotFoundException) {
                         if (keyword.isNotEmpty() &&
-                            !listOf(n.app, n.channel, n.title, n.content)
+                            !listOf(n.app, n.app, n.channel, n.title, n.content)
                                 .joinToString("\n").lowercase().contains(keyword)
                         )
                             continue
                         l.add(
-                            NotificationItem(n.app, n.channel, n.title, n.content, n.intent, n.time)
+                            NotificationItem(
+                                n.app, n.app, n.channel, n.title,
+                                n.content, n.intent, n.time
+                            )
                         )
 
                     }

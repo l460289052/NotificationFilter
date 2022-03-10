@@ -9,6 +9,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.NotificationFilter">
+        <activity
+            android:name=".FilterActivity"
+            android:exported="false" />
+
         <service
             android:name=".NotificationCatcher"
             android:enabled="true"

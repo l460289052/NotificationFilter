@@ -5,6 +5,8 @@ import android.content.*
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import android.widget.Toast
+import com.example.notificationfilter.database.NotificationDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
@@ -13,6 +15,7 @@ import java.time.LocalDateTime
 open class NotificationCatcher : NotificationListenerService() {
     private val scope = CoroutineScope(SupervisorJob())
     private val db: NotificationDatabase by lazy { NotificationDatabase.getDatabase(this) }
+    private var regex: Regex? = null
 
 
     private lateinit var stopReceiver: BroadcastReceiver
@@ -23,41 +26,49 @@ open class NotificationCatcher : NotificationListenerService() {
             RUNNING = false
             requestUnbind()
             Log.v(NOTI_SERVER, "stop")
+            Toast.makeText(applicationContext, "server stop", Toast.LENGTH_SHORT).show()
         }
         IntentFilter().apply {
             addAction(IntentStop)
             registerReceiver(stopReceiver, this)
         }
-//        requestUnbind()
+        requestUnbind()
     }
 
     override fun onListenerConnected() {
         super.onListenerConnected()
         Log.v(NOTI_SERVER, "on connected")
+        Toast.makeText(applicationContext, "server start", Toast.LENGTH_SHORT).show()
+
+        scope.launch {
+            val filters = db.filterDao().getAll()
+            if (filters.isNotEmpty())
+                regex = filters.map { "(${it.regex})" }.joinToString("|").toRegex()
+        }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
-        sbn?.let {
-
-            val notification = it.notification
+        sbn?.run {
+            val notification = notification
             val extras = notification.extras
-            val title = extras.getString(Notification.EXTRA_TITLE)
-            val text = extras.getString(Notification.EXTRA_TEXT)
-
+            val title = extras.getString(Notification.EXTRA_TITLE) ?: ""
+            val text = extras.getString(Notification.EXTRA_TEXT) ?: ""
 
             scope.launch {
-                val dao = db.notificationDao()
-                dao.insertAll(
-                    Notification(
-                        LocalDateTime.now(),
-                        it.packageName,
-                        notification.channelId,
-                        title ?: "",
-                        text ?: "",
-                        "" // TODO: 需要之后实现intent的持久化与跳转！
-                    )
-                )
-                Log.v(NOTI_SERVER, "insert")
+                com.example.notificationfilter.database.Notification(
+                    LocalDateTime.now(),
+                    packageName,
+                    notification.channelId,
+                    title ?: "",
+                    text ?: "",
+                    "" // TODO: 需要之后实现intent的持久化与跳转！
+                ).run {
+                    Log.v(NOTI_SERVER, "receive")
+                    if (regex?.find(listOf(app).joinToString("\n"))?.value == null) {
+                        db.notificationDao().insertAll(this)
+                        Log.v(NOTI_SERVER, "insert")
+                    }
+                }
             }
         }
     }

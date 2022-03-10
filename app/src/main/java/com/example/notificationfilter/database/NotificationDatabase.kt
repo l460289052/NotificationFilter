@@ -1,4 +1,4 @@
-package com.example.notificationfilter
+package com.example.notificationfilter.database
 
 import android.content.Context
 import androidx.room.*
@@ -23,38 +23,16 @@ class Converters {
     }
 }
 
-@Entity(indices = [Index(value = ["app", "channel"])])
-data class Notification(
-    @ColumnInfo(index = true) val time: LocalDateTime,
-    val app: String,
-    val channel: String,
-    val title: String,
-    val content: String,
-    val intent: String
-) {
-    @PrimaryKey(autoGenerate = true)
-    var id: Int = 0
-}
 
-@Dao
-interface NotificationDao {
-    @Query("SELECT * FROM notification")
-    fun getAll(): List<Notification>
-
-    @Query("SELECT * FROM notification WHERE time > :left AND time < :right ORDER BY time DESC")
-    fun getBetween(left: LocalDateTime, right: LocalDateTime): List<Notification>
-
-    @Query("SELECT * FROM notification WHERE time > :left ORDER BY time DESC")
-    fun getAfter(left: LocalDateTime): List<Notification>
-
-    @Insert
-    fun insertAll(vararg notifications: Notification)
-}
-
-@Database(entities = [Notification::class], version = 1, exportSchema = false)
+@Database(
+    entities = [
+        Notification::class,
+        NotificationFilter::class], version = 1, exportSchema = false
+)
 @TypeConverters(Converters::class)
 abstract class NotificationDatabase : RoomDatabase() {
     abstract fun notificationDao(): NotificationDao
+    abstract fun filterDao(): NotificationFilterDao
 
     companion object {
         @Volatile
