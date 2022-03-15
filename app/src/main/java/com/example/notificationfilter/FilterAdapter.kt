@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.properties.Delegates
 
 
 class FilterAdapter(
@@ -22,7 +23,21 @@ class FilterAdapter(
     RecyclerView.Adapter<FilterAdapter.ViewHolder>() {
 
     inner class ViewHolder(val binding: NotificationFilterBinding) :
-        RecyclerView.ViewHolder(binding.root) {}
+        RecyclerView.ViewHolder(binding.root) {
+        var pos: Int = 0
+        lateinit var filter: NotificationFilter
+
+        init {
+            binding.run {
+                editTextMultiLine.addTextChangedListener(onTextChanged = { text, _, _, _ ->
+                    Log.v(TAG, "text changed")
+                    buttonApply.visibility =
+                        if (text.toString() != filter.regex) View.VISIBLE
+                        else View.GONE
+                })
+            }
+        }
+    }
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
@@ -35,17 +50,14 @@ class FilterAdapter(
         )
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val filter = filterList[position]
+        holder.pos = position
+        holder.filter = filter
         holder.binding.run {
-            val filter = filterList[position]
+            textViewId.text = filter.id.toString()
             switchButton.isChecked = filter.enabled
+            buttonApply.visibility = View.GONE
             editTextMultiLine.text = filter.regex.toEditable()
-
-            editTextMultiLine.addTextChangedListener(onTextChanged = { text, _, _, _ ->
-                Log.v(TAG, "text changed")
-                buttonApply.visibility =
-                    if (text.toString() != filter.regex) View.VISIBLE
-                    else View.GONE
-            })
 
             switchButton.setOnCheckedChangeListener { _, enabled ->
                 filter.enabled = enabled
@@ -73,7 +85,9 @@ class FilterAdapter(
                         filterList.removeAt(position)
                     }
                     withContext(Dispatchers.Main) {
-                        this@FilterAdapter.notifyItemRangeRemoved(position, 1)
+//                        this@FilterAdapter.notifyDataSetChanged()
+                        notifyItemRemoved(position)
+                        notifyItemRangeChanged(position, filterList.size)
                     }
                 }
 

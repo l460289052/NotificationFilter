@@ -30,5 +30,5 @@ interface NotificationFilterDao {
     fun delete(vararg filters: NotificationFilter)
 
     @Insert
-    fun insert(vararg filters: NotificationFilter)
+    fun insert(vararg filters: NotificationFilter): List<Long>
 }

@@ -2,6 +2,7 @@ package com.example.notificationfilter
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.Settings
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.notificationfilter.database.NotificationDatabase
@@ -42,6 +43,21 @@ class FilterActivity : AppCompatActivity() {
             recyclerViewFilter.apply {
                 layoutManager = LinearLayoutManager(this@FilterActivity)
                 addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))
+            }
+            floatingActionButtonAddFilter.setOnClickListener {
+                GlobalScope.launch {
+                    NotificationFilter("").also {
+                        withContext(Dispatchers.IO) {
+                            it.id = db.filterDao().insert(it)[0].toInt()
+                            filters.add(it)
+                        }
+                        withContext(Dispatchers.Main) {
+                            viewAdapter.notifyItemInserted(filters.size)
+                            recyclerViewFilter.smoothScrollToPosition(filters.size)
+                        }
+                    }
+
+                }
             }
         }
 
