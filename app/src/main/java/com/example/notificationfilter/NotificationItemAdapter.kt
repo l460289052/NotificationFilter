@@ -74,6 +74,6 @@ class NotificationItemAdapter(private var notificationItemList: List<Notificatio
         }
     }
 
-    override fun getItemCount() = notificationItemList.count()
+    override fun getItemCount() = notificationItemList.size
 
 }

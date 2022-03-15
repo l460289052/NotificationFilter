@@ -20,7 +20,6 @@ import android.view.View
 import android.widget.DatePicker
 import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.Switch
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -32,8 +31,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import com.example.notificationfilter.database.NotificationDatabase
 import com.example.notificationfilter.database.NotificationFilter
@@ -73,15 +70,6 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    private fun rebindListenerService() {
-        NotificationListenerService.requestRebind(
-            ComponentName(
-                applicationContext,
-                NotificationCatcher::class.java
-            )
-        )
-    }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.menu_noti ->
@@ -114,17 +102,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun createView() {
         binding = ActivityMainBinding.inflate(layoutInflater)
-        val view = binding.root
-        setContentView(view)
+        setContentView(binding.root)
 
         binding.run {
-            logView.apply {
+            recyclerViewNotification.apply {
                 layoutManager = LinearLayoutManager(this@MainActivity)
                 addItemDecoration(DividerItemDecoration(context, LinearLayout.VERTICAL))
             }.also { registerForContextMenu(it) }
 
-            editTextDateStart.text = Editable.Factory.getInstance()
-                .newEditable(LocalDate.now().format(DateTimeFormatter.ISO_DATE))
+            editTextDateStart.text = LocalDate.now().format(DateTimeFormatter.ISO_DATE).toEditable()
         }
     }
 
@@ -260,7 +246,7 @@ class MainActivity : AppCompatActivity() {
 
             withContext(Dispatchers.Main) {
                 viewAdapter = NotificationItemAdapter(notificationItemList)
-                binding.logView.adapter = viewAdapter
+                binding.recyclerViewNotification.adapter = viewAdapter
             }
         }
     }

@@ -73,6 +73,11 @@ open class NotificationCatcher : NotificationListenerService() {
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(stopReceiver)
+    }
+
     private class FuncBroadcastReceiver(val func: () -> Unit) : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) = func()
     }

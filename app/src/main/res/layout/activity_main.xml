@@ -13,7 +13,6 @@
         android:orientation="vertical"
         app:layout_constraintGuide_percent="0.5" />
 
-
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh_layout"
         android:layout_width="0dp"
@@ -29,22 +28,10 @@
         app:layout_constraintTop_toBottomOf="@+id/editTextDateStart">
 
         <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/log_view"
+            android:id="@+id/recycler_view_notification"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <EditText
-            android:id="@+id/editTextTime"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ems="10"
-            android:inputType="time" />
-
-        <ImageButton
-            android:id="@+id/imageButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            tools:srcCompat="@tools:sample/backgrounds/scenic" />
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <EditText

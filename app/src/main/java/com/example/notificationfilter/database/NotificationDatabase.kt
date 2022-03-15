@@ -43,7 +43,7 @@ abstract class NotificationDatabase : RoomDatabase() {
                     context.applicationContext,
                     NotificationDatabase::class.java,
                     "notification_database.db"
-                ).build()
+                ).addMigrations(MIGRATION_1_2).build()
                 INSTANCE = instance
                 instance
             }
