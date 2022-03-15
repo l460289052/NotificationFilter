@@ -21,6 +21,7 @@ import android.widget.DatePicker
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Switch
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -57,8 +58,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPrepareOptionsMenu(menu: Menu?): Boolean {
         menu?.run {
-            val switch: Switch = findItem(R.id.menu_switch).actionView as Switch
-            switch.setOnCheckedChangeListener { compoundButton, enabled ->
+            val switch = findItem(R.id.menu_switch).actionView as SwitchCompat
+            switch.setOnCheckedChangeListener { _, enabled ->
                 if (enabled) {
                     if (!notificationPermission)
                         startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) // 这句话是请求权限的…… NotificationListenerService.requestRebind(
@@ -140,9 +141,7 @@ class MainActivity : AppCompatActivity() {
         R.id.context_menu_filter -> {
             GlobalScope.launch(Dispatchers.IO) {
                 notificationItemList[viewAdapter.currentPosition].run {
-                    db.filterDao().insert(
-                        NotificationFilter("^$pkg\n$channel\n")
-                    )
+                    db.filterDao().insert(NotificationFilter(pkg, channel))
                 }
             }
             rebindListenerService()
@@ -152,10 +151,12 @@ class MainActivity : AppCompatActivity() {
             GlobalScope.launch {
                 withContext(Dispatchers.IO) {
                     val regex =
-                        notificationItemList[viewAdapter.currentPosition].run { "^$pkg\n$channel\n" }
-//                    db.filterDao().insert(NotificationFilter(regex))
-//
-//                    rebindListenerService(
+                        notificationItemList[viewAdapter.currentPosition].run {
+                            NotificationFilter.getRegex(pkg, channel)
+                        }
+                    db.filterDao().insert(NotificationFilter(regex))
+
+                    rebindListenerService()
 
                     val dao = db.notificationDao()
                     val reg = regex.toRegex()
@@ -207,20 +208,16 @@ class MainActivity : AppCompatActivity() {
                 val startDate =
                     LocalDate.parse(binding.editTextDateStart.text, DateTimeFormatter.ISO_DATE)
                 val endDate = if (binding.editTextDateEnd.text.isNotEmpty())
-                    LocalDate.parse(binding.editTextDateStart.text, DateTimeFormatter.ISO_DATE)
+                    LocalDate.parse(binding.editTextDateEnd.text, DateTimeFormatter.ISO_DATE)
                 else
                     null
                 val notifications = db.notificationDao().run {
                     if (endDate == null) db.notificationDao()
-                        .getAfter(
-                            LocalDateTime.of(
-                                startDate,
-                                LocalTime.of(0, 0)
-                            )
-                        ) else db.notificationDao()
+                        .getAfter(startDate.toLocalDateTime())
+                    else db.notificationDao()
                         .getBetween(
-                            LocalDateTime.of(startDate, LocalTime.of(0, 0)),
-                            LocalDateTime.of(endDate.also { it.plusDays(1) }, LocalTime.of(0, 0))
+                            startDate.toLocalDateTime(),
+                            endDate.run { plusDays(1) }.toLocalDateTime()
                         )
                 }
 
@@ -233,8 +230,8 @@ class MainActivity : AppCompatActivity() {
                         val ai = pm.getApplicationInfo(n.app, 0)
                         val name = ai.loadLabel(pm) as String
                         if (keyword.isNotEmpty() &&
-                            !listOf(name, n.app, n.channel, n.title, n.content)
-                                .joinToString("\n").lowercase().contains(keyword)
+                            !joinToSearch(name, n.app, n.channel, n.title, n.content)
+                                .contains(keyword)
                         )
                             continue
                         l.add(
@@ -246,8 +243,8 @@ class MainActivity : AppCompatActivity() {
 
                     } catch (e: PackageManager.NameNotFoundException) {
                         if (keyword.isNotEmpty() &&
-                            !listOf(n.app, n.app, n.channel, n.title, n.content)
-                                .joinToString("\n").lowercase().contains(keyword)
+                            !joinToSearch(n.app, n.app, n.channel, n.title, n.content)
+                                .contains(keyword)
                         )
                             continue
                         l.add(

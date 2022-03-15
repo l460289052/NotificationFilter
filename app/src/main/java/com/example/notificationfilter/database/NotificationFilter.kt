@@ -4,10 +4,18 @@ import androidx.room.*
 
 @Entity(tableName = "notification_filter")
 data class NotificationFilter(
-    var regex: String
+    var regex: String,
+    var enabled: Boolean = true
 ) {
     @PrimaryKey(autoGenerate = true)
     var id = 0
+
+    constructor(pkg: String, channel: String) : this(getRegex(pkg, channel))
+
+    companion object {
+        fun getRegex(pkg: String, channel: String): String =
+            "^${Regex.escape(pkg)}\n${Regex.escape(channel)}\n"
+    }
 }
 
 @Dao

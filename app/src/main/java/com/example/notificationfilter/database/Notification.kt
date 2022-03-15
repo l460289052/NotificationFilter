@@ -1,6 +1,7 @@
 package com.example.notificationfilter.database
 
 import androidx.room.*
+import com.example.notificationfilter.joinToRegex
 import java.time.LocalDateTime
 
 @Entity(indices = [Index(value = ["app", "channel"])])
@@ -14,7 +15,7 @@ data class Notification(
 ) {
     @PrimaryKey(autoGenerate = true)
     var id: Int = 0
-    fun toBeRegex(): String = listOf(app, channel, title, content).joinToString("\n")
+    fun toBeRegex(): String = joinToRegex(app, channel, title, content)
 }
 
 @Dao

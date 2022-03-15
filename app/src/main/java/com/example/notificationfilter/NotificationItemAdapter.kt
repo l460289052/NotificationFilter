@@ -1,5 +1,6 @@
 package com.example.notificationfilter
 
+import android.annotation.SuppressLint
 import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.LayoutInflater
@@ -30,6 +31,7 @@ class NotificationItemAdapter(private var notificationItemList: List<Notificatio
     RecyclerView.Adapter<NotificationItemAdapter.ViewHolder>() {
     var currentPosition: Int = 0
 
+    @SuppressLint("ClickableViewAccessibility")
     inner class ViewHolder(val binding: NotificationItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
 

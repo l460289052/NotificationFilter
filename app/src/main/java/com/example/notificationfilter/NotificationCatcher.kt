@@ -43,7 +43,7 @@ open class NotificationCatcher : NotificationListenerService() {
         scope.launch {
             val filters = db.filterDao().getAll()
             if (filters.isNotEmpty())
-                regex = filters.map { "(${it.regex})" }.joinToString("|").toRegex()
+                regex = filters.joinToString("|") { "(${it.regex})" }.toRegex()
         }
     }
 
@@ -59,12 +59,12 @@ open class NotificationCatcher : NotificationListenerService() {
                     LocalDateTime.now(),
                     packageName,
                     notification.channelId,
-                    title ?: "",
-                    text ?: "",
+                    title,
+                    text,
                     "" // TODO: 需要之后实现intent的持久化与跳转！
                 ).run {
                     Log.v(NOTI_SERVER, "receive")
-                    if (regex?.find(listOf(app).joinToString("\n"))?.value == null) {
+                    if (regex?.find(toBeRegex())?.value == null) {
                         db.notificationDao().insertAll(this)
                         Log.v(NOTI_SERVER, "insert")
                     }

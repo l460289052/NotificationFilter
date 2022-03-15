@@ -27,7 +27,7 @@ class Converters {
 @Database(
     entities = [
         Notification::class,
-        NotificationFilter::class], version = 1, exportSchema = false
+        NotificationFilter::class], version = 2, exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class NotificationDatabase : RoomDatabase() {
