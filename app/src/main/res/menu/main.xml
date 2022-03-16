@@ -8,6 +8,9 @@
         app:actionViewClass="androidx.appcompat.widget.SwitchCompat"
         app:showAsAction="always" />
     <item
+        android:id="@+id/menu_label"
+        android:title="标签" />
+    <item
         android:id="@+id/menu_filters"
         android:title="过滤器" />
     <item

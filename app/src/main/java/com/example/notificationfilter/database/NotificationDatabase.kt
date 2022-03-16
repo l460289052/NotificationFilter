@@ -27,12 +27,19 @@ class Converters {
 @Database(
     entities = [
         Notification::class,
-        NotificationFilter::class], version = 2, exportSchema = true
+        NotificationFilter::class,
+        SearchLabel::class
+    ],
+    autoMigrations = [
+        AutoMigration(from = 2, to = 3)
+    ],
+    version = 3, exportSchema = true
 )
 @TypeConverters(Converters::class)
 abstract class NotificationDatabase : RoomDatabase() {
     abstract fun notificationDao(): NotificationDao
     abstract fun filterDao(): NotificationFilterDao
+    abstract fun labelDao(): SearchLabelDao
 
     companion object {
         @Volatile

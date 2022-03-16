@@ -4,13 +4,11 @@ import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.Settings
-import android.service.notification.NotificationListenerService
 import android.text.Editable
 import android.util.Log
 import android.view.ContextMenu
@@ -34,15 +32,20 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import com.example.notificationfilter.database.NotificationDatabase
 import com.example.notificationfilter.database.NotificationFilter
+import com.example.notificationfilter.database.SearchLabel
+import com.example.notificationfilter.filter.FilterActivity
+import com.example.notificationfilter.label.LabelActivity
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
-    private lateinit var viewAdapter: NotificationItemAdapter
+    private lateinit var labelViewAdapter: LabelAdapter
+    private lateinit var notificationViewAdapter: NotificationItemAdapter
     private lateinit var manager: NotificationManager
 
     private val db: NotificationDatabase by lazy { NotificationDatabase.getDatabase(this) }
     private var notificationItemList: List<NotificationItem> = listOf()
+    private var labelList: List<SearchLabel> = listOf()
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.main, menu)
@@ -85,6 +88,9 @@ class MainActivity : AppCompatActivity() {
                 )
             R.id.menu_filters ->
                 startActivity(Intent(this, FilterActivity::class.java))
+            R.id.menu_label ->
+                startActivity(Intent(this, LabelActivity::class.java))
+            // TODO: 每日推送重要事项（在标签里面加入即可，注意需要在数据库里面加一列是否启用推送）
         }
         return true
     }
@@ -97,6 +103,7 @@ class MainActivity : AppCompatActivity() {
 
         setListener()
 
+        loadSearchLabel()
         search()
     }
 
@@ -109,6 +116,9 @@ class MainActivity : AppCompatActivity() {
                 layoutManager = LinearLayoutManager(this@MainActivity)
                 addItemDecoration(DividerItemDecoration(context, LinearLayout.VERTICAL))
             }.also { registerForContextMenu(it) }
+
+            recyclerViewLabelHorizontal.layoutManager =
+                LinearLayoutManager(this@MainActivity, LinearLayoutManager.HORIZONTAL, false)
 
             editTextDateStart.text = LocalDate.now().format(DateTimeFormatter.ISO_DATE).toEditable()
         }
@@ -126,7 +136,7 @@ class MainActivity : AppCompatActivity() {
     override fun onContextItemSelected(item: MenuItem): Boolean = when (item.itemId) {
         R.id.context_menu_filter -> {
             GlobalScope.launch(Dispatchers.IO) {
-                notificationItemList[viewAdapter.currentPosition].run {
+                notificationItemList[notificationViewAdapter.currentPosition].run {
                     db.filterDao().insert(NotificationFilter(pkg, channel))
                 }
             }
@@ -137,7 +147,7 @@ class MainActivity : AppCompatActivity() {
             GlobalScope.launch {
                 withContext(Dispatchers.IO) {
                     val regex =
-                        notificationItemList[viewAdapter.currentPosition].run {
+                        notificationItemList[notificationViewAdapter.currentPosition].run {
                             NotificationFilter.getRegex(pkg, channel)
                         }
                     db.filterDao().insert(NotificationFilter(regex))
@@ -181,14 +191,27 @@ class MainActivity : AppCompatActivity() {
 
             swipeRefreshLayout.setOnRefreshListener {
                 search()
+                loadSearchLabel()
                 swipeRefreshLayout.isRefreshing = false
             }
         }
 
     }
 
+    private fun loadSearchLabel() {
+        GlobalScope.launch {
+            withContext(Dispatchers.IO) {
+                labelList = db.labelDao().getAll()
+                labelViewAdapter = LabelAdapter(labelList) { search(it) }
+            }
+            withContext(Dispatchers.Main) {
+                binding.recyclerViewLabelHorizontal.adapter = labelViewAdapter
+            }
+        }
+    }
 
-    private fun search() {
+
+    private fun search(regex: Regex? = null) {
         GlobalScope.launch {
             withContext(Dispatchers.IO) {
                 val startDate =
@@ -215,38 +238,40 @@ class MainActivity : AppCompatActivity() {
                     try {
                         val ai = pm.getApplicationInfo(n.app, 0)
                         val name = ai.loadLabel(pm) as String
-                        if (keyword.isNotEmpty() &&
-                            !joinToSearch(name, n.app, n.channel, n.title, n.content)
-                                .contains(keyword)
+                        val string1 = joinToSearch(name, n.app, n.channel, n.title, n.content)
+                        val string2 = n.toBeRegex()
+                        if (
+                            (keyword.isEmpty() || string1.contains(keyword)) &&
+                            (regex == null || (regex.find(string1)?.value != null ||
+                                    regex.find(string2)?.value != null))
                         )
-                            continue
-                        l.add(
-                            NotificationItem(
-                                n.app, name, n.channel, n.title, n.content,
-                                n.intent, n.time, ai.loadIcon(pm)
+                            l.add(
+                                NotificationItem(
+                                    n.app, name, n.channel, n.title, n.content,
+                                    n.intent, n.time, ai.loadIcon(pm)
+                                )
                             )
-                        )
 
                     } catch (e: PackageManager.NameNotFoundException) {
-                        if (keyword.isNotEmpty() &&
-                            !joinToSearch(n.app, n.app, n.channel, n.title, n.content)
-                                .contains(keyword)
+                        val string1 = joinToSearch(n.app, n.app, n.channel, n.title, n.content)
+                        val string2 = n.toBeRegex()
+                        if ((keyword.isEmpty() || string1.contains(keyword)) &&
+                            (regex == null || (regex.find(string1)?.value != null ||
+                                    regex.find(string2)?.value != null))
                         )
-                            continue
-                        l.add(
-                            NotificationItem(
-                                n.app, n.app, n.channel, n.title,
-                                n.content, n.intent, n.time
+                            l.add(
+                                NotificationItem(
+                                    n.app, n.app, n.channel, n.title,
+                                    n.content, n.intent, n.time
+                                )
                             )
-                        )
-
                     }
                 notificationItemList = l
             }
 
             withContext(Dispatchers.Main) {
-                viewAdapter = NotificationItemAdapter(notificationItemList)
-                binding.recyclerViewNotification.adapter = viewAdapter
+                notificationViewAdapter = NotificationItemAdapter(notificationItemList)
+                binding.recyclerViewNotification.adapter = notificationViewAdapter
             }
         }
     }

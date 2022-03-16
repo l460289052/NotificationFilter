@@ -1,8 +1,7 @@
-package com.example.notificationfilter
+package com.example.notificationfilter.filter
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.provider.Settings
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.notificationfilter.database.NotificationDatabase
@@ -29,7 +28,7 @@ class FilterActivity : AppCompatActivity() {
                 filters = db.filterDao().getAll().toMutableList()
             }
             withContext(Dispatchers.Main) {
-                viewAdapter = FilterAdapter(filters, db)
+                viewAdapter = FilterAdapter(filters, db.filterDao())
                 binding.recyclerViewFilter.adapter = viewAdapter
             }
         }
@@ -37,9 +36,9 @@ class FilterActivity : AppCompatActivity() {
 
     private fun createView() {
         binding = ActivityFilterBinding.inflate(layoutInflater)
-        setContentView(binding.root)
 
         binding.run {
+            setContentView(root)
             recyclerViewFilter.apply {
                 layoutManager = LinearLayoutManager(this@FilterActivity)
                 addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))

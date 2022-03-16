@@ -10,7 +10,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.NotificationFilter">
         <activity
-            android:name=".FilterActivity"
+            android:name=".label.LabelActivity"
+            android:exported="false" />
+        <activity
+            android:name=".filter.FilterActivity"
             android:exported="false" />
 
         <service
